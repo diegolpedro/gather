@@ -259,3 +259,30 @@ services:
     depends_on:
       - airflow-webserver
 
+  uphb:
+    container_name: uphb
+    build:
+      context: src
+      dockerfile: uphb.Dockerfile
+    restart: unless-stopped
+    environment:
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      - postgres
+    volumes:
+      - ./src/uphb.py:/app/uphb.py
+
+  api:
+    container_name: api
+    build:
+      context: src
+      dockerfile: api.Dockerfile
+    restart: unless-stopped
+    expose:
+      - 8000
+    environment:
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      - postgres
+    volumes:
+      - ./src/api.py:/app/api.py

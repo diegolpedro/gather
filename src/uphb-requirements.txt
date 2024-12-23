@@ -1,0 +1,9 @@
+# Azure
+azure-storage-blob==12.22.0
+azure-identity==1.17.1
+azure-keyvault-secrets==4.8.0
+
+# Uphb
+pyhomebroker==0.55
+sqlalchemy==2.0.36
+psycopg2==2.9.10

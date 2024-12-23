@@ -80,6 +80,22 @@ CREATE TABLE cotizacion_diaria(
 
 
 -------------------------------------------------------------------------------
+-- PARAMETROS
+-------------------------------------------------------------------------------
+-- DROP TABLE parametro;
+CREATE TABLE parametro(
+    parametro_id    SERIAL,
+    nombre          varchar(10),
+    valor           varchar(256),
+    PRIMARY KEY(parametro_id)
+);
+
+-- Horarios
+INSERT INTO parametro(nombre, valor)
+VALUES ('H_INI', '11:00'), ('H_FIN', '17:00');
+
+
+-------------------------------------------------------------------------------
 -- TRIGGERS
 -------------------------------------------------------------------------------
 CREATE FUNCTION update_cot_actual_function()

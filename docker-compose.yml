@@ -18,6 +18,14 @@ x-airflow-common:
     postgres:
       condition: service_healthy
 
+x-src-common-env:
+  &src-common-env
+  AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:-}
+  AZURE_TENANT_ID: ${AZURE_TENANT_ID:-}
+  AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET:-}
+  AZURE_VAULT_URL: ${AZURE_VAULT_URL:-}
+  PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
+
 services:
 
   postgres:
@@ -266,7 +274,7 @@ services:
       dockerfile: uphb.Dockerfile
     restart: unless-stopped
     environment:
-      PYTHONUNBUFFERED: 1
+      <<: *src-common-env
     depends_on:
       - postgres
     volumes:
@@ -278,10 +286,10 @@ services:
       context: src
       dockerfile: api.Dockerfile
     restart: unless-stopped
+    environment:
+      <<: *src-common-env
     expose:
       - 8000
-    environment:
-      PYTHONUNBUFFERED: 1
     depends_on:
       - postgres
     volumes:

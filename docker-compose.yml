@@ -251,11 +251,47 @@ services:
     restart: always
 
   proxy:
+    container_name: proxy
     build:
       context: proxy/.
+    expose:
+      - 5432
     ports:
       - "80:80"
+      - "5432:5432"
     restart: always
     depends_on:
-      - airflow-webserver
+      - api
 
+  uphb:
+    container_name: uphb
+    build:
+      context: src
+      dockerfile: uphb.Dockerfile
+    restart: no
+    environment:
+      <<: *src-common-env
+    depends_on:
+      - postgres
+    volumes:
+      - ./src/uphb.py:/app/uphb.py
+
+  api:
+    container_name: api
+    build:
+      context: src
+      dockerfile: api.Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *src-common-env
+    expose:
+      - 8000
+    depends_on:
+      - postgres
+    volumes:
+      - ./src/api.py:/app/api.py
+    healthcheck:
+       test: ["CMD", "curl", "127.0.0.1:8000/"]
+       interval: 60s
+       retries: 5
+       start_period: 15s

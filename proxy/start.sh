@@ -2,7 +2,7 @@
 
 set -e
 
-envsubst < /etc/nginx/default.conf > /etc/nginx/conf.d/default.conf
+envsubst < /etc/nginx/https.conf > /etc/nginx/conf.d/https.conf
 
 # start nginx with the dameon running in the foreground
 nginx -g "daemon off;"

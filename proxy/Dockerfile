@@ -7,9 +7,10 @@ ENV LISTEN_PORT=80
 COPY ./start.sh /start.sh
 RUN chmod +x /start.sh
 
-RUN touch /etc/nginx/conf.d/default.conf
+RUN touch /etc/nginx/conf.d/https.conf
 
-COPY ./proxy_params /etc/nginx/
-COPY ./default.conf /etc/nginx/
+COPY ./nginx.conf /etc/nginx/
+COPY ./https.conf /etc/nginx/
+COPY ./streams.conf /etc/nginx/
 
 ENTRYPOINT [ "sh", "-c", "./start.sh" ]

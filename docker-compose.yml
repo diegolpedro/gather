@@ -271,14 +271,30 @@ services:
     depends_on:
       - api
 
-  uphb:
-    container_name: uphb
+  # Descarga options
+  upopt:
+    container_name: up-options
     build:
       context: src
       dockerfile: uphb.Dockerfile
     restart: no
     environment:
       <<: *src-common-env
+    depends_on:
+      - postgres
+    volumes:
+      - ./src/uphb.py:/app/uphb.py
+
+  # Descarga securities
+  upsec:
+    container_name: up-securities
+    build:
+      context: src
+      dockerfile: uphb.Dockerfile
+    restart: no
+    environment:
+      <<: *src-common-env
+      TYPE: 'bluechips'
     depends_on:
       - postgres
     volumes:

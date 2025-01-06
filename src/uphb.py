@@ -22,6 +22,7 @@
 # https://github.com/crapher/pyhomebroker.git
 #
 import logging
+import os
 import pandas as pd
 import time
 from datetime import datetime, timezone, timedelta
@@ -30,9 +31,105 @@ from pyhomebroker import HomeBroker
 from sqlalchemy import create_engine, insert, MetaData, select, Table
 from sqlalchemy.orm import Session
 
-import websocket
 
+logger = logging.getLogger(__name__)
 tz = -3  # UTC-3
+
+
+def on_open(online):
+
+    logger.info('Connection opened')
+
+
+def on_personal_portfolio(online, portfolio_quotes, order_book_quotes):
+
+    print('------------------- Personal Portfolio -------------------')
+    print(portfolio_quotes)
+    print('------------ Personal Portfolio - Order Book -------------')
+    print(order_book_quotes)
+
+
+def on_securities(online, quotes):
+
+    # Tabla: securities_data
+    # symbol, settlement, bid_size, bid, ask, ask_size, last, change, open, high, low, previous_close, turnover, volume, operations, datetime, panel
+    quotes = quotes.reset_index()
+    quotes['datetime'] = pd.to_datetime(quotes['datetime'], errors='coerce')
+    quotes = quotes.dropna()
+
+    for index, row in quotes.iterrows():
+        
+        # print(row['symbol'], row['settlement'], row['bid_size'], row['bid'],
+        #       row['ask'], row['ask_size'], row['last'], row['change'],
+        #       row['open'], row['high'], row['low'], row['previous_close'],
+        #       int(row['turnover']), row['volume'], row['operations'],
+        #       row['datetime'], row['group'])
+
+        stmt = insert(securities_data).values(
+            symbol=row['symbol'], bid_size=row['bid_size'], bid=row['bid'], ask=row['ask'],
+            ask_size=row['ask_size'], last=row['last'], change=row['change'], open=row['open'],
+            high=row['high'], low=row['low'], previous_close=row['previous_close'],
+            turnover=int(row['turnover']), volume=int(row['volume']), operations=int(row['operations']),
+            datetime=row['datetime'], settlement=row['settlement'], panel=row['group'])
+
+        with engine.connect() as conn:
+            result = conn.execute(stmt)
+            conn.commit()
+
+
+def on_options(online, quotes):
+
+    # Tabla: options_data
+    # bid_size, bid, ask, ask_size, last, change, open, high, low, previous_close, turnover, volume, operations, datetime, expiration, strike, kind, underlying_asset
+
+    quotes = quotes.reset_index()
+    quotes['datetime'] = pd.to_datetime(quotes['datetime'], errors='coerce')
+    quotes = quotes.dropna()
+    quotes['expiration'] = pd.to_datetime(
+        quotes['expiration'], errors='coerce')
+
+    for index, row in quotes.iterrows():
+
+        # print(row['symbol'], row['bid_size'], row['bid'], row['ask'],
+        #       row['ask_size'], row['last'], row['change'], row['open'],
+        #       row['high'], row['low'], row['previous_close'], int(
+        #       row['turnover']), row['volume'], row['operations'],
+        #       row['datetime'], row['expiration'], row['strike'],
+        #       row['kind'], row['underlying_asset'])
+
+        stmt = insert(options_data).values(symbol=row['symbol'], bid_size=row['bid_size'], bid=row['bid'], ask=row['ask'],
+                                           ask_size=row['ask_size'], last=row['last'], change=row['change'], open=row['open'],
+                                           high=row['high'], low=row['low'], previous_close=row['previous_close'],
+                                           turnover=int(row['turnover']), volume=int(row['volume']), operations=int(row['operations']),
+                                           datetime=row['datetime'], expiration=row['expiration'], strike=row['strike'],
+                                           kind=row['kind'], underlying_asset=row['underlying_asset'])
+        with engine.connect() as conn:
+            result = conn.execute(stmt)
+            conn.commit()
+
+
+def on_repos(online, quotes):
+
+    print('--- Repos ---')
+    print(quotes)
+
+
+def on_order_book(online, quotes):
+
+    print('--- Order Book (Level 2) ---')
+    print(quotes)
+
+
+def on_error(online, exception, connection_lost):
+
+    print('@@@ Error @@@')
+    logger.error( str(online), str(exception), str(connection_lost))
+
+
+def on_close(online):
+
+    logger.info('Connection closed')
+
 
 def run_online():
 
@@ -50,7 +147,16 @@ def run_online():
                   password=br_pass, raise_exception=True)
 
     hb.online.connect()
-    hb.online.subscribe_options()
+
+    if down_type == 'bluechips':
+
+        # Bluechips define HomeBroker al panel principal
+        hb.online.subscribe_securities('bluechips', '24hs')
+        hb.online.subscribe_securities('bluechips', 'spot')
+    else:
+
+        # Opciones
+        hb.online.subscribe_options()
 
     # Traemos horario de fin de rueda.
     with Session(engine) as session:
@@ -61,89 +167,22 @@ def run_online():
     while(hora_local(tz) < h_fin):
         time.sleep(300)
 
-    hb.online.unsubscribe_options()
+    if down_type == 'bluechips':
+        hb.online.unsubscribe_securities('bluechips', 'spot')
+        hb.online.unsubscribe_securities('bluechips', '24hs')
+    else:
+        hb.online.unsubscribe_options()
+
     hb.online.disconnect()
 
 
-def on_open(online):
-
-    print('=================== CONNECTION OPENED ====================')
-
-
-def on_personal_portfolio(online, portfolio_quotes, order_book_quotes):
-
-    print('------------------- Personal Portfolio -------------------')
-    print(portfolio_quotes)
-    print('------------ Personal Portfolio - Order Book -------------')
-    print(order_book_quotes)
-
-
-def on_securities(online, quotes):
-
-    print('----------------------- Securities -----------------------')
-    print(quotes)
-
-
-def on_options(online, quotes):
-
-    # print('------------------------ Options -------------------------')
-    # bid_size, bid, ask, ask_size, last, change, open, high, low, previous_close, turnover, volume, operations, datetime, expiration, strike, kind, underlying_asset
-
-    # TODO: Corregir el hecho de que borre el trigger al encontrar repetidos.
-    # Solucion 1 (Elimina el trigger)
-    # quotes = quotes.reset_index()
-    # quotes.to_sql("options_data", con=engine, if_exists="replace", index=False)
-
-    quotes = quotes.reset_index()
-    quotes['datetime'] = pd.to_datetime(quotes['datetime'], errors='coerce')
-    quotes = quotes.dropna()    # TODO: Revisar
-    # quotes = quotes.dropna(subset=['datetime'])
-    quotes['expiration'] = pd.to_datetime(
-        quotes['expiration'], errors='coerce')
-
-    for index, row in quotes.iterrows():
-        print(row['symbol'], row['bid_size'], row['bid'], row['ask'],
-              row['ask_size'], row['last'], row['change'], row['open'],
-              row['high'], row['low'], row['previous_close'], int(
-                  row['turnover']),
-              row['volume'], row['operations'], row['datetime'],
-              row['expiration'], row['strike'], row['kind'],
-              row['underlying_asset'])
-        stmt = insert(options_data).values(symbol=row['symbol'], bid_size=row['bid_size'], bid=row['bid'], ask=row['ask'],
-                                           ask_size=row['ask_size'], last=row['last'], change=row['change'], open=row['open'],
-                                           high=row['high'], low=row['low'], previous_close=row['previous_close'],
-                                           turnover=int(row['turnover']), volume=int(row['volume']), operations=int(row['operations']),
-                                           datetime=row['datetime'], expiration=row['expiration'], strike=row['strike'],
-                                           kind=row['kind'], underlying_asset=row['underlying_asset'])
-        with engine.connect() as conn:
-            result = conn.execute(stmt)
-            conn.commit()
-
-
-def on_repos(online, quotes):
-
-    print('------------------------- Repos --------------------------')
-    print(quotes)
-
-
-def on_order_book(online, quotes):
-
-    print('------------------ Order Book (Level 2) ------------------')
-    print(quotes)
-
-
-def on_error(online, exception, connection_lost):
-
-    print('@@@@@@@@@@@@@@@@@@@@@@@@@ Error @@@@@@@@@@@@@@@@@@@@@@@@@@')
-    print(online, exception, connection_lost)
-
-
-def on_close(online):
-
-    print('=================== CONNECTION CLOSED ====================')
-
-
 if __name__ == '__main__':
+
+    down_type = os.getenv("TYPE")
+    if down_type is None:
+        logger.warning(
+            "Warn: Falta definir tipo de descarga. Se descargan opciones por defecto.")
+        down_type = 'options'
 
     utc_minus_3 = timezone(timedelta(hours=-3))
     hoy = datetime.now(tz=utc_minus_3)
@@ -172,6 +211,7 @@ if __name__ == '__main__':
     engine = create_engine(db_url)
     metadata = MetaData()
     options_data = Table('options_data', metadata, autoload_with=engine)
+    securities_data = Table('securities_data', metadata, autoload_with=engine)
     parametro = Table('parametro', metadata, autoload_with=engine)
 
     run_online()

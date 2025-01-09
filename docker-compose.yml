@@ -276,7 +276,10 @@ services:
     container_name: up-options
     build:
       context: src
-      dockerfile: uphb.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        REQUIREMENT_FILE: "uphb-requirements.txt"
+    command: ["uphb.py"]
     restart: no
     environment:
       <<: *src-common-env
@@ -287,10 +290,13 @@ services:
 
   # Descarga securities
   upsec:
-    container_name: up-securities
+    container_name: upload-securities
     build:
       context: src
-      dockerfile: uphb.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        REQUIREMENT_FILE: "uphb-requirements.txt"
+    command: ["uphb.py"]
     restart: no
     environment:
       <<: *src-common-env
@@ -304,7 +310,10 @@ services:
     container_name: api
     build:
       context: src
-      dockerfile: api.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        REQUIREMENT_FILE: "api-requirements.txt"
+    command: ["api.py"]
     restart: unless-stopped
     environment:
       <<: *src-common-env

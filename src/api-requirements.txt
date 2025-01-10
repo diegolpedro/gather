@@ -9,5 +9,4 @@ uvicorn==0.34.0
 sqlalchemy==2.0.36
 psycopg2==2.9.10
 
-#Data
-pandas==2.2.3
+# Data

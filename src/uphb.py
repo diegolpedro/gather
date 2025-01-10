@@ -29,6 +29,7 @@ from datetime import datetime, timezone, timedelta
 from common.tools import get_azure_secret_client, get_azure_blob_client, hora_local
 from pyhomebroker import HomeBroker
 from sqlalchemy import create_engine, insert, MetaData, select, Table
+from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import Session
 
 
@@ -129,6 +130,7 @@ def on_error(online, exception, connection_lost):
 def on_close(online):
 
     logger.info('Connection closed')
+    engine.dispose()  # Libera las conexiones al cerrar
 
 
 def run_online():
@@ -208,7 +210,15 @@ if __name__ == '__main__':
     # Database connection details
     # Conectado a base postgres del mismo stack docker
     db_url = "postgresql://%s:%s@postgres:5432/%s" % (db_user, db_pass, db)
-    engine = create_engine(db_url)
+    
+    # TEST: Pool pequeño
+    # engine = create_engine(db_url, 
+    #     pool_size=2,  # Máximo de dos conexiónes a la vez
+    #     max_overflow=0  # No permite conexiones adicionales
+    #     )
+
+    engine = create_engine(db_url, poolclass=NullPool)  # No mantiene conexiones persistentes
+    
     metadata = MetaData()
     options_data = Table('options_data', metadata, autoload_with=engine)
     securities_data = Table('securities_data', metadata, autoload_with=engine)

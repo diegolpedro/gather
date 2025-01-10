@@ -18,9 +18,7 @@
 # Summary:
 # API implementa la api de acceso a los datos de la base
 import csv
-import logging
 import tempfile
-import time
 import uvicorn
 from datetime import date, timezone, timedelta
 from common.tools import get_azure_secret_client, get_azure_blob_client
@@ -28,7 +26,6 @@ from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, insert, MetaData, select, Table, func
 from sqlalchemy.orm import sessionmaker, Session
-import pandas as pd
 
 
 # Azure Blob Secrets

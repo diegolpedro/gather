@@ -21,9 +21,9 @@
 # Home Broker API - Market data downloader
 # https://github.com/crapher/pyhomebroker.git
 #
-from sqlalchemy import select, insert
-from sqlalchemy.sql.expression import literal
 from sqlalchemy import create_engine, insert, MetaData, select, Table, func
+from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import literal
 from common.tools import get_azure_secret_client, get_azure_blob_client, \
 hora_local
 import logging
@@ -90,8 +90,9 @@ if __name__ == '__main__':
     )
 
     # Ejecutar la consulta para "Securities"
-    with engine.connect() as connection:
-        connection.execute(securities_insert)
+    with Session(engine) as session:
+        session.execute(securities_insert)
+        session.commit()
 
     # Insertar datos de "Options" en "cotizacion_diaria"
     options_insert = insert(cotizacion_diaria).from_select(
@@ -138,6 +139,9 @@ if __name__ == '__main__':
         )
     )
 
+    print(options_insert)
+
     # Ejecutar la consulta para "Options"
-    with engine.connect() as connection:
-        connection.execute(options_insert)
+    with Session(engine) as session:
+        session.execute(options_insert)
+        session.commit()

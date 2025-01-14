@@ -24,7 +24,7 @@
 from sqlalchemy import select, insert
 from sqlalchemy.sql.expression import literal
 from sqlalchemy import create_engine, insert, MetaData, select, Table, func
-from common.tools import get_azure_secret_client, get_azure_blob_client,
+from common.tools import get_azure_secret_client, get_azure_blob_client, \
 hora_local
 import logging
 

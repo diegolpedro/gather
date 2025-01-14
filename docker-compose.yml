@@ -273,7 +273,7 @@ services:
 
   # Descarga options
   upopt:
-    container_name: up-options
+    container_name: upload-options
     build:
       context: src
       dockerfile: Dockerfile
@@ -307,8 +307,8 @@ services:
       - ./src/uphb.py:/app/uphb.py
 
   # Actualizacion cotizacion diaria (Corre finalizado el dia)
-  updopt:
-    container_name: update-daily-options
+  updday:
+    container_name: daily-update
     build:
       context: src
       dockerfile: Dockerfile

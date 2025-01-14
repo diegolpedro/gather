@@ -306,6 +306,23 @@ services:
     volumes:
       - ./src/uphb.py:/app/uphb.py
 
+  # Actualizacion cotizacion diaria (Corre finalizado el dia)
+  updopt:
+    container_name: update-daily-options
+    build:
+      context: src
+      dockerfile: Dockerfile
+      args:
+        REQUIREMENT_FILE: "upd-requirements.txt"
+    command: ["upd.py"]
+    restart: no
+    environment:
+      <<: *src-common-env
+    depends_on:
+      - postgres
+    volumes:
+      - ./src/upd.py:/app/upd.py
+
   api:
     container_name: api
     build:

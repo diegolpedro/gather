@@ -84,7 +84,8 @@ if __name__ == '__main__':
             func.date(cotizacion_actual.c.datetime).label("date"),
         ).where(
             cotizacion_actual.c.panel == 'bluechips',
-            cotizacion_actual.c.last.isnot(None)
+            cotizacion_actual.c.last.isnot(None),
+            func.date(cotizacion_actual.c.datetime) == func.current_date()
         )
     )
 
@@ -132,7 +133,8 @@ if __name__ == '__main__':
             cotizacion_actual.c.kind,
             cotizacion_actual.c.underlying_asset,
         ).where(
-            cotizacion_actual.c.underlying_asset.isnot(None)
+            cotizacion_actual.c.underlying_asset.isnot(None),
+            func.date(cotizacion_actual.c.datetime) == func.current_date()
         )
     )
 

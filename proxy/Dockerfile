@@ -12,5 +12,6 @@ RUN touch /etc/nginx/conf.d/https.conf
 COPY ./nginx.conf /etc/nginx/
 COPY ./https.conf /etc/nginx/
 COPY ./streams.conf /etc/nginx/
+COPY ./proxy_params /etc/nginx/
 
 ENTRYPOINT [ "sh", "-c", "./start.sh" ]

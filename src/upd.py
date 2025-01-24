@@ -25,15 +25,22 @@ from sqlalchemy import create_engine, insert, MetaData, select, Table, func
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import literal
 from common.tools import get_azure_secret_client, get_azure_blob_client, \
-hora_local
+    hora_local
+from datetime import datetime
 import logging
+import os
 
 
 logger = logging.getLogger(__name__)
-tz = -3  # UTC-3
-
 
 if __name__ == '__main__':
+
+    # Obtiene Fecha especifica del entorno o utiliza la fecha del dia actual
+    specific_date = os.getenv("SPECIFIC_DATE")
+    if specific_date is None:
+        specific_date = func.current_date()
+    else:
+        specific_date = datetime.strptime(specific_date, '%Y-%m-%d').date()
 
     # Azure Secrets
     azs_client = get_azure_secret_client()
@@ -85,7 +92,7 @@ if __name__ == '__main__':
         ).where(
             cotizacion_actual.c.panel == 'bluechips',
             cotizacion_actual.c.last.isnot(None),
-            func.date(cotizacion_actual.c.datetime) == func.current_date()
+            func.date(cotizacion_actual.c.datetime) == specific_date
         )
     )
 
@@ -135,7 +142,7 @@ if __name__ == '__main__':
             cotizacion_actual.c.underlying_asset,
         ).where(
             cotizacion_actual.c.underlying_asset.isnot(None),
-            func.date(cotizacion_actual.c.datetime) == func.current_date()
+            func.date(cotizacion_actual.c.datetime) == specific_date
         )
     )
 

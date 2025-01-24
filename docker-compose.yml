@@ -318,6 +318,7 @@ services:
     restart: no
     environment:
       <<: *src-common-env
+      # SPECIFIC_DATE: '2025-01-24'  # Ejemplo de pasaje de fecha
     depends_on:
       - postgres
     volumes:

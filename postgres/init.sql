@@ -33,12 +33,15 @@ CREATE TABLE options_data (
     underlying_asset TEXT                -- Activo subyacente
 );
 
-
--------------------------------------------------------------------------------
--- COTIZACION ACTUAL TABLE
--------------------------------------------------------------------------------
-CREATE TABLE cotizacion_actual(
-    symbol TEXT PRIMARY KEY,             -- Símbolo único para cada registro
+-- DROP TABLE IF EXISTS securities_data;
+CREATE TABLE securities_data (
+    id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    symbol TEXT,                         -- Símbolo único para cada registro
+    settlement TEXT,                     -- Plazo de loquidacion 
+    bid_size INTEGER,                    -- Tamaño de la oferta
+    bid NUMERIC,                         -- Precio de la oferta
+    ask NUMERIC,                         -- Precio de la demanda
+    ask_size INTEGER,                    -- Tamaño de la demanda
     last NUMERIC,                        -- Último precio
     change NUMERIC,                      -- Cambio porcentual
     open NUMERIC,                        -- Precio de apertura
@@ -49,19 +52,17 @@ CREATE TABLE cotizacion_actual(
     volume BIGINT,                       -- Volumen total
     operations INTEGER,                  -- Número de operaciones
     datetime TIMESTAMP,                  -- Fecha y hora del registro
-    expiration DATE,                     -- Fecha de vencimiento
-    strike NUMERIC,                      -- Precio de ejercicio
-    kind TEXT,                           -- Tipo de opción (CALL/PUT)
-    underlying_asset TEXT                -- Activo subyacente
+    panel TEXT                           -- Panel
 );
 
-
 -------------------------------------------------------------------------------
--- COTIZACION DIARIA TABLE
+-- COTIZACION ACTUAL TABLE
 -------------------------------------------------------------------------------
--- DROP TABLE cotizacion_diaria;
-CREATE TABLE cotizacion_diaria(
+-- DROP TABLE IF EXISTS cotizacion_actual;
+CREATE TABLE cotizacion_actual(
+    -- titulo_id           int PRIMARY KEY,
     symbol TEXT,                         -- Símbolo único para cada registro
+    settlement TEXT,                     -- Plazo de loquidacion 
     last NUMERIC,                        -- Último precio
     change NUMERIC,                      -- Cambio porcentual
     open NUMERIC,                        -- Precio de apertura
@@ -76,7 +77,35 @@ CREATE TABLE cotizacion_diaria(
     strike NUMERIC,                      -- Precio de ejercicio
     kind TEXT,                           -- Tipo de opción (CALL/PUT)
     underlying_asset TEXT,               -- Activo subyacente
-    PRIMARY KEY (symbol, datetime)
+    panel TEXT,                           -- Panel
+    PRIMARY KEY(symbol, settlement)
+    -- FOREIGN KEY(titulo_id) REFERENCES titulo_t(titulo_id)
+);
+
+
+-------------------------------------------------------------------------------
+-- COTIZACION DIARIA TABLE
+-------------------------------------------------------------------------------
+-- DROP TABLE cotizacion_diaria;
+CREATE TABLE cotizacion_diaria(
+    symbol TEXT,                         -- Símbolo único para cada registro
+    settlement TEXT,                     -- Plazo de loquidacion 
+    last NUMERIC,                        -- Último precio
+    change NUMERIC,                      -- Cambio porcentual
+    open NUMERIC,                        -- Precio de apertura
+    high NUMERIC,                        -- Precio máximo
+    low NUMERIC,                         -- Precio mínimo
+    previous_close NUMERIC,              -- Precio de cierre anterior
+    turnover BIGINT,                     -- Volumen de negocios
+    volume BIGINT,                       -- Volumen total
+    operations INTEGER,                  -- Número de operaciones
+    date DATE,                           -- Fecha y hora del registro
+    expiration DATE,                     -- Fecha de vencimiento
+    strike NUMERIC,                      -- Precio de ejercicio
+    kind TEXT,                           -- Tipo de opción (CALL/PUT)
+    underlying_asset TEXT,               -- Activo subyacente
+    UNIQUE (symbol, settlement, date)
+    -- FOREIGN KEY(titulo_id) REFERENCES titulo_t(titulo_id)
 );
 
 
@@ -99,6 +128,10 @@ VALUES ('H_INI', '11:00'), ('H_FIN', '17:00');
 -------------------------------------------------------------------------------
 -- TRIGGERS
 -------------------------------------------------------------------------------
+
+--- Options 
+
+DROP TRIGGER IF EXISTS update_cot_actual_trigger ON options_data;
 DROP FUNCTION IF EXISTS update_cot_actual_function();
 CREATE FUNCTION update_cot_actual_function()
    RETURNS TRIGGER 
@@ -123,18 +156,38 @@ CREATE FUNCTION update_cot_actual_function()
        RETURN NULL;
     END;
     $$;
-
-DROP TRIGGER IF EXISTS update_cot_actual_trigger
-ON options_data;
 CREATE TRIGGER update_cot_actual_trigger AFTER INSERT
     ON options_data
     FOR EACH ROW
     EXECUTE PROCEDURE update_cot_actual_function();
 
+--- Securities
 
--- INSERT INTO cotizacion_actual (symbol)
--- SELECT DISTINCT symbol
--- FROM options_data
--- WHERE symbol not in ( 
---     SELECT DISTINCT symbol
---     FROM cotizacion_actual);
+DROP TRIGGER IF EXISTS update_securities_actual_trigger ON securities_data;
+DROP FUNCTION IF EXISTS update_securities_actual();
+
+CREATE FUNCTION update_securities_actual()
+   RETURNS TRIGGER 
+   LANGUAGE PLPGSQL
+    AS $$
+    BEGIN
+       UPDATE cotizacion_actual SET last = NEW.last, 
+                                change = NEW.change,
+                                open = NEW.open,
+                                high = NEW.high,
+                                low = NEW.low,
+                                previous_close = NEW.previous_close,
+                                turnover = NEW.turnover,
+                                volume = NEW.volume,
+                                operations = NEW.operations,
+                                datetime = NEW.datetime,
+                                settlement = NEW.settlement,
+                                panel = NEW.panel
+       WHERE symbol = NEW.symbol AND settlement = NEW.settlement;
+       RETURN NULL;
+    END;
+    $$;
+CREATE TRIGGER update_securities_actual_trigger AFTER INSERT
+    ON securities_data
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_securities_actual();

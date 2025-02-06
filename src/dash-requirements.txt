@@ -1,0 +1,14 @@
+# Azure
+azure-storage-blob==12.22.0
+azure-identity==1.17.1
+azure-keyvault-secrets==4.8.0
+
+# FastAPI
+fastapi==0.115.6
+uvicorn==0.34.0
+sqlalchemy==2.0.36
+psycopg2==2.9.10
+
+# Dash
+dash==2.18.2
+pandas==2.2.3

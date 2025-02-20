@@ -28,7 +28,7 @@ from dash.dependencies import Input, Output, State
 from dash import dcc, html
 import dash
 from common.tools import get_azure_secret_client, get_azure_blob_client, \
-hora_local
+    hora_local
 
 
 # Configuración de la base de datos
@@ -54,7 +54,7 @@ app = dash.Dash(__name__)
 
 
 # ----------------------
-## Layout del dashboard
+# Layout del dashboard
 # ----------------------
 app.layout = html.Div([
 
@@ -109,7 +109,7 @@ app.layout = html.Div([
     # Solapas
     dcc.Tabs(id='tabs', value='tab-ggal', children=[
         dcc.Tab(label='GGAL', value='tab-ggal',
-                style={'width': '80px', 
+                style={'width': '80px',
                        'height': '20px',
                        'display': 'flex',
                        'flex-direction': 'column',
@@ -123,7 +123,7 @@ app.layout = html.Div([
                                 'flex-direction': 'column',
                                 'align-items': 'center'}),
         dcc.Tab(label='Bonos', value='tab-bonos',
-                style={'width': '80px', 
+                style={'width': '80px',
                        'height': '20px',
                        'display': 'flex',
                        'flex-direction': 'column',
@@ -147,6 +147,10 @@ app.layout = html.Div([
         'align-items': 'center'
     }),
 
+    # Evita warnings por no encontrarse ids en el layout inicial
+    dcc.Graph(id='ggal-chart', style={'display': 'none'}),
+    html.Div(id='cot-bancos', style={'display': 'none'}),
+
     # Contenido de las solapas
     html.Div(id='tabs-content'),
 
@@ -159,7 +163,7 @@ app.layout = html.Div([
 
 
 # ----------------------
-## Callbacks
+# Callbacks
 # ----------------------
 
 # Callback para actualizar el contenido de las solapas
@@ -320,4 +324,4 @@ def update_chart(n):
 
 # Ejecutar la aplicación
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port=8050)
+    app.run_server(debug=True, host='0.0.0.0', port=80)

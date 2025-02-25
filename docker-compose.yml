@@ -306,6 +306,24 @@ services:
     volumes:
       - ./src/uphb.py:/app/uphb.py
 
+  # Descarga de renta fija
+  upbon:
+    container_name: upload-bonds
+    build:
+      context: src
+      dockerfile: Dockerfile
+      args:
+        REQUIREMENT_FILE: "uphb-requirements.txt"
+    command: ["uphb.py"]
+    restart: no
+    environment:
+      <<: *src-common-env
+      TYPE: 'bonds'
+    depends_on:
+      - postgres
+    volumes:
+      - ./src/uphb.py:/app/uphb.py
+
   # Actualizacion cotizacion diaria (Corre finalizado el dia)
   updday:
     container_name: daily-update

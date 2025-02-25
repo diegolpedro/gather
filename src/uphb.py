@@ -59,7 +59,7 @@ def on_securities(online, quotes):
     quotes = quotes.dropna()
 
     for index, row in quotes.iterrows():
-        
+
         # print(row['symbol'], row['settlement'], row['bid_size'], row['bid'],
         #       row['ask'], row['ask_size'], row['last'], row['change'],
         #       row['open'], row['high'], row['low'], row['previous_close'],
@@ -124,7 +124,7 @@ def on_order_book(online, quotes):
 def on_error(online, exception, connection_lost):
 
     print('@@@ Error @@@')
-    logger.error( str(online), str(exception), str(connection_lost))
+    logger.error(str(online), str(exception), str(connection_lost))
 
 
 def on_close(online):
@@ -151,12 +151,16 @@ def run_online():
     hb.online.connect()
 
     if down_type == 'bluechips':
-
         # Bluechips define HomeBroker al panel principal
         hb.online.subscribe_securities('bluechips', '24hs')
         hb.online.subscribe_securities('bluechips', 'spot')
+    elif down_type == 'bonds':
+        # Bonos y Corporativos (government_bonds, 
+        # short_term_government_bonds, corporate_bonds)
+        hb.online.subscribe_securities('government_bonds', '24hs')
+        hb.online.subscribe_securities('short_term_government_bonds', '24hs')
+        hb.online.subscribe_securities('corporate_bonds', '24hs')
     else:
-
         # Opciones
         hb.online.subscribe_options()
 
@@ -172,6 +176,10 @@ def run_online():
     if down_type == 'bluechips':
         hb.online.unsubscribe_securities('bluechips', 'spot')
         hb.online.unsubscribe_securities('bluechips', '24hs')
+    elif down_type == 'bonds':
+        hb.online.unsubscribe_securities('government_bonds', '24hs')
+        hb.online.unsubscribe_securities('short_term_government_bonds', '24hs')
+        hb.online.unsubscribe_securities('corporate_bonds', '24hs')
     else:
         hb.online.unsubscribe_options()
 
@@ -210,15 +218,16 @@ if __name__ == '__main__':
     # Database connection details
     # Conectado a base postgres del mismo stack docker
     db_url = "postgresql://%s:%s@postgres:5432/%s" % (db_user, db_pass, db)
-    
+
     # TEST: Pool pequeño
-    # engine = create_engine(db_url, 
+    # engine = create_engine(db_url,
     #     pool_size=2,  # Máximo de dos conexiónes a la vez
     #     max_overflow=0  # No permite conexiones adicionales
     #     )
 
-    engine = create_engine(db_url, poolclass=NullPool)  # No mantiene conexiones persistentes
-    
+    # No mantiene conexiones persistentes
+    engine = create_engine(db_url, poolclass=NullPool)
+
     metadata = MetaData()
     options_data = Table('options_data', metadata, autoload_with=engine)
     securities_data = Table('securities_data', metadata, autoload_with=engine)

@@ -46,6 +46,8 @@ services:
       interval: 10s
       retries: 5
       start_period: 5s
+    networks:
+      - gather-net
 
   redis:
     image: redis:7.2-bookworm # Redis is limited to 7.2-bookworm
@@ -270,6 +272,8 @@ services:
     restart: always
     depends_on:
       - api
+    networks:
+      - gather-net
 
   # Descarga options
   upopt:
@@ -287,6 +291,8 @@ services:
       - postgres
     volumes:
       - ./src/uphb.py:/app/uphb.py
+    networks:
+      - gather-net
 
   # Descarga securities
   upsec:
@@ -305,6 +311,8 @@ services:
       - postgres
     volumes:
       - ./src/uphb.py:/app/uphb.py
+    networks:
+      - gather-net
 
   # Descarga de renta fija
   upbon:
@@ -323,6 +331,8 @@ services:
       - postgres
     volumes:
       - ./src/uphb.py:/app/uphb.py
+    networks:
+      - gather-net
 
   # Actualizacion cotizacion diaria (Corre finalizado el dia)
   updday:
@@ -341,6 +351,8 @@ services:
       - postgres
     volumes:
       - ./src/upd.py:/app/upd.py
+    networks:
+      - gather-net
 
   api:
     container_name: api
@@ -364,3 +376,10 @@ services:
        interval: 60s
        retries: 5
        start_period: 15s
+    networks:
+      - gather-net
+
+
+networks:
+  mi-red:
+    external: true

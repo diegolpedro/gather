@@ -381,5 +381,5 @@ services:
 
 
 networks:
-  mi-red:
+  gather-net:
     external: true

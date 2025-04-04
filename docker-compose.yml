@@ -270,6 +270,8 @@ services:
       - "80:80"
       - "8001:5432"
     restart: always
+    volumes:
+      - /quants/staticfiles:/quants/staticfiles
     depends_on:
       - api
     networks:

@@ -26,6 +26,7 @@ Este stack contiene varios módulos:
 - **docker-socket-proxy**: Proxy de socket para utilizar el DockerOperator dentro de Airflow.
 - **postgres**: Base de datos.
 - **redis**: Manejador de mensajes del 'scheduler' hacia los trabajadores.
+- **alerts**: Servicio HTTP para gestionar notificaciones. Ver [documentación](alerts/README.md).
 
 Opcionalmente, puedes habilitar Flower añadiendo la opción `--profile flower`, por ejemplo:
 

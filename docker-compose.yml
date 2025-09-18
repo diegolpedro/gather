@@ -364,3 +364,23 @@ services:
        interval: 60s
        retries: 5
        start_period: 15s
+
+  alerts:
+    container_name: alerts
+    build:
+      context: ./alerts
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8500"]
+    restart: unless-stopped
+    environment:
+      <<: *src-common-env
+      ALERTS_TELEGRAM_TOKEN_SECRET_NAME: ${ALERTS_TELEGRAM_TOKEN_SECRET_NAME:-}
+      ALERTS_SMTP_HOST: ${ALERTS_SMTP_HOST:-}
+      ALERTS_SMTP_PORT: ${ALERTS_SMTP_PORT:-587}
+      ALERTS_SMTP_USERNAME_SECRET_NAME: ${ALERTS_SMTP_USERNAME_SECRET_NAME:-}
+      ALERTS_SMTP_PASSWORD_SECRET_NAME: ${ALERTS_SMTP_PASSWORD_SECRET_NAME:-}
+      ALERTS_SMTP_USE_TLS: ${ALERTS_SMTP_USE_TLS:-true}
+      ALERTS_EMAIL_FROM_SECRET_NAME: ${ALERTS_EMAIL_FROM_SECRET_NAME:-}
+    ports:
+      - "8500:8500"
+    volumes:
+      - ./alerts/src:/app

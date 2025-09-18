@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+httpx
+pydantic[email]
+azure-identity
+azure-keyvault-secrets
+azure-core
+sqlalchemy
+psycopg2-binary

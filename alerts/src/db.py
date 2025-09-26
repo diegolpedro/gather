@@ -16,7 +16,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from .config import get_database_url
+from config import get_database_url
 
 
 Base = declarative_base()

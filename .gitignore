@@ -1,0 +1,39 @@
+.github
+
+# Hidden
+.env
+.pgpass
+
+# Airflow
+airflow/persist/*
+!airflow/persist/dags
+airflow/persist/dags/*
+
+# Postgres
+postgres/data/*
+
+# Logs
+logs/*
+
+# Runtime
+*.pid
+
+# Development Files
+common/old
+__pycache__
+Notas-*.txt
+*.bak
+*.old
+
+# upppi
+upppi
+
+# uphb
+src/example_hb.py
+src/sql
+src/*test.py
+src/csv
+# src/upd.py
+# src/upd-requirements.txt
+
+postgres/*.sh

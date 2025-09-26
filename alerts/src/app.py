@@ -8,8 +8,8 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr, root_validator
 
-from .channels import ChannelStatus, send_email_alert, send_telegram_alert
-from .db import create_alert_log, init_db
+from channels import ChannelStatus, send_email_alert, send_telegram_alert
+from db import create_alert_log, init_db
 
 
 app = FastAPI(title="Alerts Service")

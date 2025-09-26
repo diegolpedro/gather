@@ -403,12 +403,13 @@ services:
     networks:
       - gather-net
   
-    alerts:
+  alerts:
     container_name: alerts
     build:
       context: ./alerts
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8500"]
     restart: unless-stopped
+    env_file: ".env"
     environment:
       <<: *src-common-env
       ALERTS_TELEGRAM_TOKEN_SECRET_NAME: ${ALERTS_TELEGRAM_TOKEN_SECRET_NAME:-}
@@ -424,3 +425,8 @@ services:
       - ./alerts/src:/app
     networks:
       - gather-net
+
+
+networks:
+  gather-net:
+    external: true

@@ -7,7 +7,7 @@ from typing import Any, Dict, Iterable
 
 import httpx
 
-from .config import (
+from config import (
     ConfigurationError,
     get_email_sender,
     get_smtp_host,

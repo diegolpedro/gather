@@ -54,7 +54,14 @@ variables = {
     "AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX": 'true',
     "AIRFLOW__WEBSERVER__SECRET_KEY": f"{web_secret_key_base64}",
     "_AIRFLOW_DB_MIGRATE": 'true',
-    "_AIRFLOW_WWW_USER_CREATE": 'true'
+    "_AIRFLOW_WWW_USER_CREATE": 'true',
+    "ALERTS_TELEGRAM_TOKEN_SECRET_NAME": '',
+    "ALERTS_SMTP_HOST": 'smtp.example.com',
+    "ALERTS_SMTP_PORT": '587',
+    "ALERTS_SMTP_USERNAME_SECRET_NAME": '',
+    "ALERTS_SMTP_PASSWORD_SECRET_NAME": '',
+    "ALERTS_SMTP_USE_TLS": 'true',
+    "ALERTS_EMAIL_FROM_SECRET_NAME": ''
 }
 
 # Agregamos las variables que dependen de otras variables, usando .format() para sustituir valores

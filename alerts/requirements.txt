@@ -1,0 +1,9 @@
+fastapi==0.115.2
+uvicorn[standard]==0.30.4
+pydantic[email]==2.9.2
+httpx
+azure-identity
+azure-keyvault-secrets
+azure-core
+sqlalchemy
+psycopg2-binary

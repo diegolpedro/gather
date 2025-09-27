@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, EmailStr, root_validator
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
 from channels import ChannelStatus, send_email_alert, send_telegram_alert
 from db import create_alert_log, init_db
@@ -35,12 +35,11 @@ class EmailTarget(BaseModel):
     subject: Optional[str] = None
     body: Optional[str] = None
 
-    @root_validator
-    def check_recipients(cls, values: dict) -> dict:
-        recipients = values.get("recipients") or []
+    @field_validator("recipients")
+    def check_recipients(cls, recipients: List[EmailStr]) -> List[EmailStr]:
         if not recipients:
             raise ValueError("At least one recipient is required for email alerts")
-        return values
+        return recipients
 
 
 class AlertRequest(BaseModel):
@@ -50,9 +49,9 @@ class AlertRequest(BaseModel):
     telegram: Optional[TelegramTarget] = None
     email: Optional[EmailTarget] = None
 
-    @root_validator
-    def check_channels(cls, values: dict) -> dict:
-        if not values.get("telegram") and not values.get("email"):
+    @model_validator(mode="after")
+    def check_channels(cls, values: "AlertRequest") -> "AlertRequest":
+        if not values.telegram and not values.email:
             raise ValueError("At least one delivery channel must be provided")
         return values
 

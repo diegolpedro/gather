@@ -17,8 +17,10 @@ from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import ClientSecretCredential
 from azure.keyvault.secrets import SecretClient
 from azure.storage.blob import BlobServiceClient
+import json
 import logging
 import os
+import requests
 import time
 
 logger = logging.getLogger(__name__)
@@ -74,7 +76,6 @@ def get_azure_blob_client(container_name, blob_name):
         blob_client.create_append_blob()
     return blob_client
 
-
 # Genera horario local con formato adecuado
 # utc (int Ej: +3, -3)
 def hora_local(utc):                                  
@@ -82,3 +83,60 @@ def hora_local(utc):
     c_time_str = time.strftime("%H:%M:%S",            
                                time.localtime(c_time))
     return c_time_str
+
+class HttpPostHandler(logging.Handler):
+    """
+    Handler personalizado para enviar logs vía POST a un endpoint.
+    """
+    def __init__(self, url: str, chat_id: str, level=logging.INFO):
+        super().__init__(level)
+        self.url = url
+        self.chat_id = chat_id
+
+    def emit(self, record):
+        try:
+            log_entry = self.format(record)
+            payload = {
+                "message": log_entry,
+                "telegram": {"chat_id": self.chat_id}
+            }
+            headers = {"Content-Type": "application/json"}
+            requests.post(self.url, data=json.dumps(payload), headers=headers, timeout=5)
+        except Exception as e:
+            # En caso de error, no queremos romper el flujo del programa
+            print(f"Error enviando log a {self.url}: {e}")
+
+class Logger:
+    """ Clase Logger que envía logs a archivo, consola y vía POST a un endpoint."""
+    def __init__(self, name: str, log_file: str = "app.log", 
+                 level: int = logging.INFO, 
+                 alert_url: str = "http://172.18.0.3:8500/alerts",
+                 chat_id: str = "1384905495"):
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(level)
+
+        if not self.logger.handlers:
+            formatter = logging.Formatter(
+                "%(asctime)s [%(levelname)s] (%(name)s): %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S"
+            )
+
+            # Handler para archivo
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(formatter)
+
+            # Handler para consola
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+
+            # Handler para API
+            http_handler = HttpPostHandler(alert_url, chat_id)
+            http_handler.setFormatter(formatter)
+
+            # Agregar todos
+            self.logger.addHandler(file_handler)
+            self.logger.addHandler(console_handler)
+            self.logger.addHandler(http_handler)
+
+    def get_logger(self):
+        return self.logger

@@ -425,6 +425,18 @@ services:
       - ./alerts/src:/app
     networks:
       - gather-net
+  
+  test:
+    container_name: test
+    build:
+      context: src
+      dockerfile: Dockerfile
+      args:
+        REQUIREMENT_FILE: "upd-requirements.txt"
+    command: ["test.py"]
+    restart: no
+    volumes:
+      - ./src/test.py:/app/test.py
 
 
 networks:

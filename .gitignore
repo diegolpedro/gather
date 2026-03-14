@@ -37,3 +37,4 @@ src/csv
 # src/upd-requirements.txt
 
 postgres/*.sh
+postgres/data

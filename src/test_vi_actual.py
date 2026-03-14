@@ -1,13 +1,15 @@
-"""Calculo de volatilidad implicita (VI) para CALLs de Galicia (GGAL) leyendo datos desde SQL."""
+#!/usr/bin/env python
+# Calculo de volatilidad implicita (VI) para CALLs de Galicia (GGAL) leyendo datos desde SQL.
+import os
 
+from dotenv import load_dotenv
 from datetime import date, datetime
-
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, MetaData, Table, select
 from sqlalchemy.pool import NullPool
-
 from common.tools import get_azure_secret_client
 from test_VIs import call_iv
 
+load_dotenv()
 
 CALLS_QUERY = """
 SELECT strike, expiration, last
@@ -33,20 +35,45 @@ def build_engine():
     db_user = azs_client.get_secret('db-user').value
     db_pass = azs_client.get_secret('db-pass').value
 
-    db_url = "postgresql://%s:%s@postgres:5432/%s" % (db_user, db_pass, db)
+    db_url = "postgresql://%s:%s@%s:8001/%s" % (db_user, db_pass, os.getenv('PG_HOST'), db)
     return create_engine(db_url, poolclass=NullPool)
 
 
 def fetch_spot_price(engine) -> float:
     """Obtiene el spot de GGAL desde SQL."""
+
+    metadata = MetaData()
+    CotizacionActual = Table('cotizacion_actual', metadata, autoload_with=engine)
+
     with engine.connect() as conn:
-        row = conn.execute(text(SPOT_QUERY)).first()
+        stmt = (
+            select(CotizacionActual.c.last)
+            .where(CotizacionActual.c.symbol == "GGAL")
+            .where(CotizacionActual.c.settlement == "spot")
+        )
+
+        row = [conn.execute(stmt).scalar()]
 
     if row is None or row[0] is None:
         raise ValueError("No se pudo obtener spot_price para GGAL desde cotizacion_actual")
-
     return float(row[0])
 
+def fetch_tasa_LR(engine) -> float:
+
+    metadata = MetaData()
+    Parametro = Table('parametro', metadata, autoload_with=engine)
+
+    with engine.connect() as conn:
+        stmt = (
+            select(Parametro.c.valor)
+            .where(Parametro.c.nombre == "tasa_LR")
+        )
+
+        row = [conn.execute(stmt).scalar()]
+    
+    if row is None or row[0] is None:
+        raise ValueError("No se pudo obtener tasa_LR desde parametro")
+    return float(row[0])
 
 def fetch_calls_galicia(engine) -> list[dict]:
     """Obtiene strikes/expiracion/last para CALLs de Galicia desde SQL."""
@@ -98,12 +125,12 @@ def calcular_vis_calls_galicia(spot_price: float, r_pct: float, today: date, cal
 
 
 if __name__ == "__main__":
-    r_pct = 30.0
     today = datetime.now().date()
 
     engine = build_engine()
     try:
         spot_price = fetch_spot_price(engine)
+        r_pct = fetch_tasa_LR(engine)
         calls_galicia = fetch_calls_galicia(engine)
     finally:
         engine.dispose()
@@ -113,6 +140,6 @@ if __name__ == "__main__":
     print(f"SPOT GGAL = {spot_price:.2f}")
     for r in resultados:
         print(
-            f"CALL strike={r['strike']:.0f} exp={r['expiration']} "
+            f"CALL strike={r['strike']:.1f} exp={r['expiration']} "
             f"last={r['call_last']:.2f} -> IV={r['call_iv']:.6f} ({r['call_iv_pct']:.3f}%)"
         )

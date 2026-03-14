@@ -11,22 +11,6 @@ from test_VIs import call_iv
 
 load_dotenv()
 
-CALLS_QUERY = """
-SELECT strike, expiration, last
-FROM cotizacion_actual
-WHERE symbol LIKE '%GFGC%'
-  AND last IS NOT NULL
-ORDER BY strike;
-""".strip()
-
-SPOT_QUERY = """
-SELECT last
-FROM public.cotizacion_actual
-WHERE symbol = 'GGAL'
-  AND settlement = 'spot';
-""".strip()
-
-
 def build_engine():
     """Crea engine de SQLAlchemy usando el mismo esquema de conexion que uphb.py."""
     azs_client = get_azure_secret_client()
@@ -37,7 +21,6 @@ def build_engine():
 
     db_url = "postgresql://%s:%s@%s:8001/%s" % (db_user, db_pass, os.getenv('PG_HOST'), db)
     return create_engine(db_url, poolclass=NullPool)
-
 
 def fetch_spot_price(engine) -> float:
     """Obtiene el spot de GGAL desde SQL."""
@@ -78,7 +61,20 @@ def fetch_tasa_LR(engine) -> float:
 def fetch_calls_galicia(engine) -> list[dict]:
     """Obtiene strikes/expiracion/last para CALLs de Galicia desde SQL."""
     with engine.connect() as conn:
-        rows = conn.execute(text(CALLS_QUERY)).all()
+        metadata = MetaData()
+        CotizacionActual = Table('cotizacion_actual', metadata, autoload_with=engine)
+        # rows = conn.execute(text(CALLS_QUERY)).all()
+        stmt = (
+            select(
+                CotizacionActual.c.strike,
+                CotizacionActual.c.expiration,
+                CotizacionActual.c.last
+            )
+            .where(CotizacionActual.c.symbol.like("%GFGC%"))
+            .where(CotizacionActual.c.last.is_not(None))
+            .order_by(CotizacionActual.c.strike)
+        )
+        rows = conn.execute(stmt).all()
 
     calls = []
     for strike, expiration, call_last in rows:
@@ -93,7 +89,6 @@ def fetch_calls_galicia(engine) -> list[dict]:
         )
 
     return calls
-
 
 def calcular_vis_calls_galicia(spot_price: float, r_pct: float, today: date, calls: list[dict]) -> list[dict]:
     """Calcula la VI para cada CALL de Galicia."""

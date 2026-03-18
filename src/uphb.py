@@ -211,7 +211,7 @@ if __name__ == '__main__':
     # br_pass = azs_client.get_secret('br-pass').value
 
     # Cuenta backup
-    br_num = 81
+    br_num = 81    # TM
     br_user = azs_client.get_secret('br-user-back').value
     br_pass = azs_client.get_secret('br-pass-back').value
 

@@ -286,7 +286,7 @@ services:
       args:
         REQUIREMENT_FILE: "uphb-requirements.txt"
     command: ["uphb.py"]
-    restart: no
+    restart: "on-failure:3"
     environment:
       <<: *src-common-env
     depends_on:
@@ -305,7 +305,7 @@ services:
       args:
         REQUIREMENT_FILE: "uphb-requirements.txt"
     command: ["uphb.py"]
-    restart: no
+    restart: "on-failure:3"
     environment:
       <<: *src-common-env
       TYPE: 'bluechips'
@@ -325,7 +325,7 @@ services:
       args:
         REQUIREMENT_FILE: "uphb-requirements.txt"
     command: ["uphb.py"]
-    restart: no
+    restart: "on-failure:3"
     environment:
       <<: *src-common-env
       TYPE: 'bonds'

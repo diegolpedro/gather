@@ -1,0 +1,8 @@
+# Levanta los procesos de mercado una vez al inicio de la rueda.
+00 10 * * 1-5 cd /gather && /usr/bin/docker compose rm -sf upsec upopt upbon && /usr/bin/docker compose up -d upsec upopt upbon 2>&1
+
+# Revisa cada 5 minutos si upsec/upopt/upbon siguen corriendo y alerta por Telegram.
+*/5 10-17 * * 1-5 /gather/scripts/check_uphb_alerts.sh 2>&1
+
+# Actualizacion diaria al cierre.
+30 17 * * 1-5 cd /gather && /usr/bin/docker compose up updday 2>&1

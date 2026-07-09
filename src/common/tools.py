@@ -110,7 +110,7 @@ class Logger:
     """ Clase Logger que envía logs a archivo, consola y vía POST a un endpoint."""
     def __init__(self, name: str, log_file: str = "app.log", 
                  level: int = logging.INFO, 
-                 alert_url: str = "http://172.18.0.3:8500/alerts",
+                 alert_url: str = "http://alerts:8500/alerts",
                  chat_id: str = "1384905495"):
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)

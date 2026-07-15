@@ -129,65 +129,131 @@ VALUES ('H_INI', '11:00'), ('H_FIN', '17:00');
 -- TRIGGERS
 -------------------------------------------------------------------------------
 
---- Options 
+--- Options / Securities
 
 DROP TRIGGER IF EXISTS update_cot_actual_trigger ON options_data;
+DROP TRIGGER IF EXISTS update_securities_actual_trigger ON securities_data;
 DROP FUNCTION IF EXISTS update_cot_actual_function();
 CREATE FUNCTION update_cot_actual_function()
    RETURNS TRIGGER 
    LANGUAGE PLPGSQL
     AS $$
     BEGIN
-       UPDATE cotizacion_actual SET last = NEW.last, 
-                                change = NEW.change,
-                                open = NEW.open,
-                                high = NEW.high,
-                                low = NEW.low,
-                                previous_close = NEW.previous_close,
-                                turnover = NEW.turnover,
-                                volume = NEW.volume,
-                                operations = NEW.operations,
-                                datetime = NEW.datetime,
-                                expiration = NEW.expiration,
-                                strike = NEW.strike,
-                                kind= NEW.kind,
-                                underlying_asset = NEW.underlying_asset
-       WHERE symbol = NEW.symbol;
+       IF TG_TABLE_NAME = 'options_data' THEN
+           INSERT INTO cotizacion_actual (
+               symbol,
+               settlement,
+               last,
+               change,
+               open,
+               high,
+               low,
+               previous_close,
+               turnover,
+               volume,
+               operations,
+               datetime,
+               expiration,
+               strike,
+               kind,
+               underlying_asset,
+               panel
+           )
+           VALUES (
+               NEW.symbol,
+               '',
+               NEW.last,
+               NEW.change,
+               NEW.open,
+               NEW.high,
+               NEW.low,
+               NEW.previous_close,
+               NEW.turnover,
+               NEW.volume,
+               NEW.operations,
+               NEW.datetime,
+               NEW.expiration,
+               NEW.strike,
+               NEW.kind,
+               NEW.underlying_asset,
+               NULL
+           )
+           ON CONFLICT (symbol, settlement) DO UPDATE
+           SET last = EXCLUDED.last,
+               change = EXCLUDED.change,
+               open = EXCLUDED.open,
+               high = EXCLUDED.high,
+               low = EXCLUDED.low,
+               previous_close = EXCLUDED.previous_close,
+               turnover = EXCLUDED.turnover,
+               volume = EXCLUDED.volume,
+               operations = EXCLUDED.operations,
+               datetime = EXCLUDED.datetime,
+               expiration = EXCLUDED.expiration,
+               strike = EXCLUDED.strike,
+               kind = EXCLUDED.kind,
+               underlying_asset = EXCLUDED.underlying_asset,
+               panel = EXCLUDED.panel;
+       ELSIF TG_TABLE_NAME = 'securities_data' THEN
+           INSERT INTO cotizacion_actual (
+               symbol,
+               settlement,
+               last,
+               change,
+               open,
+               high,
+               low,
+               previous_close,
+               turnover,
+               volume,
+               operations,
+               datetime,
+               expiration,
+               strike,
+               kind,
+               underlying_asset,
+               panel
+           )
+           VALUES (
+               NEW.symbol,
+               NEW.settlement,
+               NEW.last,
+               NEW.change,
+               NEW.open,
+               NEW.high,
+               NEW.low,
+               NEW.previous_close,
+               NEW.turnover,
+               NEW.volume,
+               NEW.operations,
+               NEW.datetime,
+               NULL,
+               NULL,
+               NULL,
+               NULL,
+               NEW.panel
+           )
+           ON CONFLICT (symbol, settlement) DO UPDATE
+           SET last = EXCLUDED.last,
+               change = EXCLUDED.change,
+               open = EXCLUDED.open,
+               high = EXCLUDED.high,
+               low = EXCLUDED.low,
+               previous_close = EXCLUDED.previous_close,
+               turnover = EXCLUDED.turnover,
+               volume = EXCLUDED.volume,
+               operations = EXCLUDED.operations,
+               datetime = EXCLUDED.datetime,
+               panel = EXCLUDED.panel;
+       END IF;
        RETURN NULL;
     END;
     $$;
-CREATE TRIGGER update_cot_actual_trigger AFTER INSERT
+CREATE TRIGGER update_cot_actual_trigger AFTER INSERT OR UPDATE
     ON options_data
     FOR EACH ROW
     EXECUTE PROCEDURE update_cot_actual_function();
-
---- Securities
-
-DROP TRIGGER IF EXISTS update_securities_actual_trigger ON securities_data;
-DROP FUNCTION IF EXISTS update_securities_actual();
-
-CREATE FUNCTION update_securities_actual()
-   RETURNS TRIGGER 
-   LANGUAGE PLPGSQL
-    AS $$
-    BEGIN
-       UPDATE cotizacion_actual SET last = NEW.last, 
-                                change = NEW.change,
-                                open = NEW.open,
-                                high = NEW.high,
-                                low = NEW.low,
-                                previous_close = NEW.previous_close,
-                                turnover = NEW.turnover,
-                                volume = NEW.volume,
-                                operations = NEW.operations,
-                                datetime = NEW.datetime,
-                                settlement = NEW.settlement,
-                                panel = NEW.panel
-       WHERE symbol = NEW.symbol AND settlement = NEW.settlement;
-       RETURN NULL;
-    END;
-    $$;
-CREATE TRIGGER update_securities_actual_trigger AFTER INSERT
+CREATE TRIGGER update_securities_actual_trigger AFTER INSERT OR UPDATE
     ON securities_data
     FOR EACH ROW
-    EXECUTE PROCEDURE update_securities_actual();
+    EXECUTE PROCEDURE update_cot_actual_function();

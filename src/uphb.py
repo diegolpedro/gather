@@ -16,7 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Summary:
-# Uphb descarga datos en tiempo real de cotizaciones desde HB
+# Uphb descarga datos en tiempo real de cotizaciones desde HB.
+# Descarga datos de acciones, bonos y opciones, segun lo que reciba por
+# variable de entorno TYPE. Por defecto descarga opciones.
 #
 # Home Broker API - Market data downloader
 # https://github.com/crapher/pyhomebroker.git

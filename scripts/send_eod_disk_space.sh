@@ -7,18 +7,56 @@ CURL_BIN="${CURL_BIN:-/usr/bin/curl}"
 ALERT_URL="${ALERT_URL:-http://localhost:8500/alerts}"
 CHAT_ID="${CHAT_ID:-1384905495}"
 MOUNT_POINT="${MOUNT_POINT:-/}"
+DEBUG="${DEBUG:-0}"
 
 # Envía alerta al endpoint de alertas con el mensaje y chat_id de Telegram
 send_alert() {
   local message="$1"
   local response
+  local stderr_file
+  local curl_exit
+  local payload
 
+  payload="$(python3 - "$message" "$CHAT_ID" <<'PY'
+import json
+import sys
+
+data = {
+    "message": sys.argv[1],
+    "telegram": {"chat_id": sys.argv[2]},
+}
+print(json.dumps(data))
+PY
+)"
+
+  stderr_file="$(mktemp)"
   response="$("$CURL_BIN" -fsS -X POST "$ALERT_URL" \
     -H "Content-Type: application/json" \
-    -d "{\"message\":\"$message\",\"telegram\":{\"chat_id\":\"$CHAT_ID\"}}" \
-    2>/dev/null)" || return 1
+    -d "$payload" \
+    2>"$stderr_file")" || curl_exit=$?
 
-  printf '%s\n' "$response" | grep -q '"success":true'
+  if [ -n "${curl_exit:-}" ]; then
+    if [ "$DEBUG" = "1" ]; then
+      printf 'DEBUG curl exit: %s\n' "$curl_exit" >&2
+      cat "$stderr_file" >&2
+    fi
+    rm -f "$stderr_file"
+    return 1
+  fi
+
+  if [ "$DEBUG" = "1" ]; then
+    printf 'DEBUG payload: %s\n' "$payload" >&2
+    printf 'DEBUG response: %s\n' "$response" >&2
+  fi
+
+  rm -f "$stderr_file"
+
+  if ! printf '%s\n' "$response" | python3 -c 'import json,sys; data=json.load(sys.stdin); results=data.get("results",[]); sys.exit(0 if results and results[0].get("success") is True else 1)'; then
+    if [ "$DEBUG" = "1" ]; then
+      printf 'DEBUG response validation failed\n' >&2
+    fi
+    return 1
+  fi
 }
 
 # Obtiene información de espacio en disco

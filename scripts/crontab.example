@@ -6,3 +6,6 @@
 
 # Actualizacion diaria al cierre.
 30 17 * * 1-5 cd /gather && /usr/bin/docker compose up updday 2>&1
+
+# Envia espacio en disco.
+0 23 * * * /home/dpedro/Dropbox/workspace/gather/scripts/send_eod_disk_space.sh

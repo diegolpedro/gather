@@ -21,7 +21,8 @@
 # Home Broker API - Market data downloader
 # https://github.com/crapher/pyhomebroker.git
 #
-from sqlalchemy import create_engine, insert, MetaData, select, Table, func
+from sqlalchemy import Table, create_engine, insert, MetaData, select, \
+    Table, func, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import literal
 from common.tools import get_azure_secret_client, get_azure_blob_client, \
@@ -59,6 +60,16 @@ if __name__ == '__main__':
         'cotizacion_actual', metadata, autoload_with=engine)
     cotizacion_diaria = Table(
         'cotizacion_diaria', metadata, autoload_with=engine)
+    
+    # Quitar datos de "Options" vencidas de "cotizacion_actual"
+    options_delete = delete(cotizacion_actual).where(
+        cotizacion_actual.c.underlying_asset.isnot(None),
+        cotizacion_actual.c.expiration <= func.current_date()
+    )
+
+    with Session(engine) as session:
+        session.execute(options_delete)
+        session.commit()
 
     # Insertar datos de "Securities" en "cotizacion_diaria"
     securities_insert = insert(cotizacion_diaria).from_select(

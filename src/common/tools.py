@@ -108,35 +108,44 @@ class HttpPostHandler(logging.Handler):
 
 class Logger:
     """ Clase Logger que envía logs a archivo, consola y vía POST a un endpoint."""
-    def __init__(self, name: str, log_file: str = "app.log", 
-                 level: int = logging.INFO, 
+    def __init__(self, name: str, log_file: str = "/app/log/app.log",
+                 level: int = logging.DEBUG,
                  alert_url: str = "http://alerts:8500/alerts",
-                 chat_id: str = "1384905495"):
+                 chat_id: str = "1384905495",
+                 console_level: int = logging.INFO,
+                 file_level: int = logging.DEBUG):
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
+        self.logger.propagate = False
 
-        if not self.logger.handlers:
-            formatter = logging.Formatter(
-                "%(asctime)s [%(levelname)s] (%(name)s): %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S"
-            )
+        # Evita duplicados si el logger ya fue configurado antes
+        if self.logger.handlers:
+            self.logger.handlers.clear()
 
-            # Handler para archivo
-            file_handler = logging.FileHandler(log_file)
-            file_handler.setFormatter(formatter)
+        formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] (%(name)s): %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
 
-            # Handler para consola
-            console_handler = logging.StreamHandler()
-            console_handler.setFormatter(formatter)
+        # Handler para archivo (más detalle)
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(file_level)
+        file_handler.setFormatter(formatter)
 
-            # Handler para API
-            http_handler = HttpPostHandler(alert_url, chat_id)
-            http_handler.setFormatter(formatter)
+        # Handler para consola (solo mensajes importantes)
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(console_level)
+        console_handler.setFormatter(formatter)
 
-            # Agregar todos
-            self.logger.addHandler(file_handler)
-            self.logger.addHandler(console_handler)
-            self.logger.addHandler(http_handler)
+        # Handler para API: solo errores
+        http_handler = HttpPostHandler(alert_url, chat_id)
+        http_handler.setLevel(logging.ERROR)
+        http_handler.setFormatter(formatter)
+
+        # Agregar todos
+        self.logger.addHandler(file_handler)
+        self.logger.addHandler(console_handler)
+        self.logger.addHandler(http_handler)
 
     def get_logger(self):
         return self.logger

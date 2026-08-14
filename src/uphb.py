@@ -28,14 +28,21 @@ import os
 import pandas as pd
 import time
 from datetime import datetime, timezone, timedelta
-from common.tools import get_azure_secret_client, get_azure_blob_client, hora_local
+from common.tools import Logger, get_azure_secret_client, get_azure_blob_client, hora_local
 from pyhomebroker import HomeBroker
+from pyhomebroker.common.exceptions import SessionException
 from sqlalchemy import create_engine, insert, MetaData, select, Table
 from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import Session
 
 
-logger = logging.getLogger(__name__)
+logger = Logger(
+    __name__,
+    log_file='/app/log/uphb.log',
+    level=logging.DEBUG,
+    console_level=logging.INFO,
+    file_level=logging.DEBUG,
+).get_logger()
 tz = -3  # UTC-3
 
 
@@ -126,7 +133,20 @@ def on_order_book(online, quotes):
 def on_error(online, exception, connection_lost):
 
     print('@@@ Error @@@')
-    logger.error(str(online), str(exception), str(connection_lost))
+    logger.error(
+        "HomeBroker online error: %s; connection_lost=%s; online=%s",
+        exception,
+        connection_lost,
+        online,
+    )
+
+
+def safe_online_call(action, description):
+
+    try:
+        action()
+    except SessionException as exc:
+        logger.warning("Skipping %s: %s", description, exc)
 
 
 def on_close(online):
@@ -176,16 +196,28 @@ def run_online():
         time.sleep(300)
 
     if down_type == 'bluechips':
-        hb.online.unsubscribe_securities('bluechips', 'spot')
-        hb.online.unsubscribe_securities('bluechips', '24hs')
+        safe_online_call(
+            lambda: hb.online.unsubscribe_securities('bluechips', 'spot'),
+            "unsubscribe bluechips spot")
+        safe_online_call(
+            lambda: hb.online.unsubscribe_securities('bluechips', '24hs'),
+            "unsubscribe bluechips 24hs")
     elif down_type == 'bonds':
-        hb.online.unsubscribe_securities('government_bonds', '24hs')
-        hb.online.unsubscribe_securities('short_term_government_bonds', '24hs')
-        hb.online.unsubscribe_securities('corporate_bonds', '24hs')
+        safe_online_call(
+            lambda: hb.online.unsubscribe_securities('government_bonds', '24hs'),
+            "unsubscribe government_bonds 24hs")
+        safe_online_call(
+            lambda: hb.online.unsubscribe_securities('short_term_government_bonds', '24hs'),
+            "unsubscribe short_term_government_bonds 24hs")
+        safe_online_call(
+            lambda: hb.online.unsubscribe_securities('corporate_bonds', '24hs'),
+            "unsubscribe corporate_bonds 24hs")
     else:
-        hb.online.unsubscribe_options()
+        safe_online_call(
+            hb.online.unsubscribe_options,
+            "unsubscribe options")
 
-    hb.online.disconnect()
+    safe_online_call(hb.online.disconnect, "disconnect")
 
 
 if __name__ == '__main__':
